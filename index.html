@@ -2,7 +2,7 @@
 $db = new SQLite3('database.db');
 
 // PASSWORD ADMIN (GANTI DENGAN PUNYA KAMU)
-$admin_password = "admin123"; 
+$admin_password = "admin123";
 
 // Fungsi tambah squad
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['squad_name'])) {
@@ -126,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_squad']) && is
             background-color: red;
             border: none;
             padding: 5px 10px;
-            cursor: pointer;
             color: white;
         }
 
@@ -160,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_squad']) && is
         function confirmDelete(squadName) {
             let password = prompt("Masukkan password admin untuk hapus squad:");
             if (password === null) return; // Jika user tekan cancel, batalin
-            
+
             let form = document.createElement("form");
             form.method = "POST";
             form.style.display = "none";
