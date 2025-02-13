@@ -1,0 +1,179 @@
+<?php
+$db = new SQLite3('database.db');
+
+// PASSWORD ADMIN (GANTI DENGAN PUNYA KAMU)
+$admin_password = "admin123"; 
+
+// Fungsi tambah squad
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['squad_name'])) {
+    $squad_name = trim($_POST['squad_name']);
+
+    if (empty($squad_name)) {
+        echo "<h3 style='color: red;'>Nama squad tidak boleh kosong!</h3>";
+        exit;
+    }
+
+    // Cek apakah nama squad sudah ada
+    $checkStmt = $db->prepare("SELECT * FROM squads WHERE name = :name");
+    $checkStmt->bindValue(':name', $squad_name, SQLITE3_TEXT);
+    $result = $checkStmt->execute();
+
+    if ($result->fetchArray()) {
+        echo "<h3 style='color: red;'>Nama squad sudah terdaftar!</h3>";
+        exit;
+    }
+
+    // Sandi room bisa diubah manual
+    $room_pass = 'RANDOM123'; // Ganti ieu sandina
+
+    $stmt = $db->prepare("INSERT INTO squads (name, room_pass) VALUES (:name, :room_pass)");
+    $stmt->bindValue(':name', $squad_name, SQLITE3_TEXT);
+    $stmt->bindValue(':room_pass', $room_pass, SQLITE3_TEXT);
+    $stmt->execute();
+
+    echo "<h3 style='font-size: 40px; color: #f39c12;'>Pendaftaran berhasil! Sandi room: " . $room_pass . "</h3>";
+    exit;
+}
+
+// Fungsi hapus squad (hanya bisa dengan password admin)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_squad']) && isset($_POST['admin_pass'])) {
+    $delete_squad = trim($_POST['delete_squad']);
+    $input_pass = trim($_POST['admin_pass']);
+
+    if ($input_pass !== $admin_password) {
+        echo "<h3 style='color: red;'>Password salah! Hapus squad gagal.</h3>";
+        exit;
+    }
+
+    $stmt = $db->prepare("DELETE FROM squads WHERE name = :name");
+    $stmt->bindValue(':name', $delete_squad, SQLITE3_TEXT);
+    $stmt->execute();
+    echo "<h3 style='color: red;'>Squad '$delete_squad' berhasil dihapus!</h3>";
+    exit;
+}
+?>
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Squad FF</title>
+    <style>
+        body {
+            background: url('https://wallpapercave.com/wp/wp2354745.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            text-align: center;
+            padding: 50px;
+        }
+        h2 {
+            font-size: 50px;
+            margin-bottom: 20px;
+        }
+        form {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            border-radius: 15px;
+            width: 50%;
+            margin: 0 auto;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            margin: 10px 0;
+            width: 80%;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 20px;
+            color: white;
+            background-color: #f39c12;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #e67e22;
+        }
+        table {
+            width: 50%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.7);
+        }
+        table, th, td {
+            border: 1px solid white;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        .delete-btn {
+            background-color: red;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            color: white;
+        }
+        .delete-btn:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+    <h2>Daftar Squad Turnamen Free Fire</h2>
+    <form method="post">
+        <label for="squad_name">Nama Squad:</label><br>
+        <input type="text" id="squad_name" name="squad_name" required><br>
+        <button type="submit">Konfirmasi</button>
+    </form>
+<h2>Daftar Squad Terdaftar</h2>
+<table>
+    <tr>
+        <th>Nama Squad</th>
+        <th>Hapus</th>
+    </tr>
+    <?php
+    $result = $db->query("SELECT * FROM squads");
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+        echo "<tr>
+                <td>{$row['name']}</td>
+                <td>
+                    <button class='delete-btn' onclick='confirmDelete(\"{$row['name']}\")'>Hapus</button>
+                </td>
+              </tr>";
+    }
+    ?>
+</table>
+
+<script>
+function confirmDelete(squadName) {
+    let password = prompt("Masukkan password admin untuk hapus squad:");
+    if (password === null) return; // Jika user tekan cancel, batalin
+    let form = document.createElement("form");
+    form.method = "POST";
+    form.style.display = "none";
+
+    let inputName = document.createElement("input");
+    inputName.type = "hidden";
+    inputName.name = "delete_squad";
+    inputName.value = squadName;
+    form.appendChild(inputName);
+
+    let inputPass = document.createElement("input");
+    inputPass.type = "hidden";
+    inputPass.name = "admin_pass";
+    inputPass.value = password;
+    form.appendChild(inputPass);
+
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+
+</body>
+</html>
